@@ -237,7 +237,14 @@ class VoiceChannelMenu: MonoBehaviour
     void OnIceCandidate(RTCPeerConnection pc, RTCIceCandidate candidate)
     {
         GetOtherPc(pc).AddIceCandidate(candidate);
-        Debug.Log($"{GetName(pc)} ICE candidate:\n {candidate.Candidate}");
+        Debug.Log($"1{GetName(pc)} ICE candidate:\n {candidate.Candidate}");
+        Debug.Log($"  2{GetName(pc)} ICE RelatedAddress:\n {candidate.RelatedAddress}");
+        Debug.Log($"  3{GetName(pc)} ICE Address:\n {candidate.Address}");
+        Debug.Log($"  4{GetName(pc)} ICE SdpMLineIndex:\n {candidate.SdpMLineIndex}");
+        Debug.Log($"  5{GetName(pc)} ICE SdpMid:\n {candidate.SdpMid}");
+        Debug.Log($"  6{GetName(pc)} ICE UserNameFragment:\n {candidate.UserNameFragment}");
+        Debug.Log($"  7{GetName(pc)} ICE candidate:\n {candidate.Type}");
+        Debug.Log($"  8{GetName(pc)} ICE candidate:\n {candidate.Candidate}");
     }
 
     string GetName(RTCPeerConnection pc)
@@ -252,6 +259,7 @@ class VoiceChannelMenu: MonoBehaviour
 
     IEnumerator OnCreateOfferSuccess(RTCSessionDescription desc)
     {
+        Debug.Log($"Offer from pc1\n{desc.type}");
         Debug.Log($"Offer from pc1\n{desc.sdp}");
         Debug.Log("pc1 setLocalDescription start");
         var op = pc1.SetLocalDescription(ref desc);
@@ -259,7 +267,7 @@ class VoiceChannelMenu: MonoBehaviour
 
         if (!op.IsError)
         {
-            OnSetLocalSuccess(pc1);
+            OnSetLocalSuccess(pc1); //Output
         }
         else
         {
@@ -272,7 +280,7 @@ class VoiceChannelMenu: MonoBehaviour
         yield return op2;
         if (!op2.IsError)
         {
-            OnSetRemoteSuccess(pc2);
+            OnSetRemoteSuccess(pc2); //Output
         }
         else
         {
@@ -288,6 +296,7 @@ class VoiceChannelMenu: MonoBehaviour
         yield return op3;
         if (!op3.IsError)
         {
+            Debug.Log("Test created: " + op3.Desc.type);
             yield return OnCreateAnswerSuccess(op3.Desc);
         }
         else
@@ -310,6 +319,7 @@ class VoiceChannelMenu: MonoBehaviour
 
     IEnumerator OnCreateAnswerSuccess(RTCSessionDescription desc)
     {
+        Debug.Log($"Answer from pc2:\n{desc.type}");
         Debug.Log($"Answer from pc2:\n{desc.sdp}");
         Debug.Log("pc2 setLocalDescription start");
         var op = pc2.SetLocalDescription(ref desc);

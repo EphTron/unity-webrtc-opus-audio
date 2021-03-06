@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/RTCPeer.unity
+    guid: 04ced89ec8e993740b5ebd01a71f7d10
   m_configObjects: {}

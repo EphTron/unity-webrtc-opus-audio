@@ -1,5 +1,12 @@
 {
   "dependencies": {
+    "com.endel.nativewebsocket": {
+      "version": "https://github.com/endel/NativeWebSocket.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "90f55f370aecb5911f0b7820f09beea5ff791cb3"
+    },
     "com.unity.collab-proxy": {
       "version": "1.3.9",
       "depth": 0,

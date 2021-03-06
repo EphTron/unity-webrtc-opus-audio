@@ -25,7 +25,7 @@ public class MyEncoder : MonoBehaviour
         recorder.OnAudioReady += OnAudioReady;
         encoder = new UnityOpus.Encoder(
             UnityOpus.SamplingFrequency.Frequency_48000,
-            UnityOpus.NumChannels.Mono,
+            UnityOpus.NumChannels.Stereo,
             UnityOpus.OpusApplication.Audio)
             {
                 Bitrate = bitrate,
