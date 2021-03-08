@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -21,6 +22,7 @@ public class RTCPeerWithMenu : MonoBehaviour
     public TMP_InputField AddAnswerInput;
     public TMP_InputField AddICEInput;
     public TMP_InputField SendInput;
+    public TMP_Text statusText;
 
     private class SdpMessage
     {
@@ -48,19 +50,21 @@ public class RTCPeerWithMenu : MonoBehaviour
 
     private RTCPeerConnection localPeer;
     private RTCDataChannel sendChannel, receiveChannel;
-    private List<RTCRtpSender> localSenders;
-    private MediaStream audioStream;
+    //private List<RTCRtpSender> localSenders;
+    //private MediaStream audioStream;
 
     private DelegateOnIceConnectionChange localPeerOnIceConnectionChange;
     private DelegateOnIceCandidate localPeerOnIceCandidate;
     private DelegateOnNegotiationNeeded localPeerOnNegotiationNeeded;
 
     private DelegateOnMessage onDataChannelMessage;
-    private DelegateOnOpen onDataChannelOpen;
+    private DelegateOnOpen onSendChannelOpen;
+    private DelegateOnOpen onReceiveChannelOpen;
     private DelegateOnClose onDataChannelClose;
     private DelegateOnDataChannel onDataChannel;
 
     public List<string> iceCandidates = new List<string>();
+    public IceList iceList;
 
     private RTCOfferOptions _offerOptions = new RTCOfferOptions
     {
@@ -88,17 +92,29 @@ public class RTCPeerWithMenu : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-       
-        localSenders = new List<RTCRtpSender>();
+        iceList.iceList = new List<IceCandidate>();
+        //localSenders = new List<RTCRtpSender>();
 
         localPeerOnIceConnectionChange = state => { OnIceConnectionChange(state); };
         localPeerOnIceCandidate = candidate => { UpdateIceCandidates(candidate); };
+        onDataChannel = channel =>
+        {
+            receiveChannel = channel;
+            receiveChannel.OnMessage = onDataChannelMessage;
+            receiveChannel.OnOpen = onReceiveChannelOpen;
+            receiveChannel.OnClose = onDataChannelClose;
+        };
+
+        onDataChannelMessage = bytes => { Debug.Log(System.Text.Encoding.UTF8.GetString(bytes)); SendInput.text = System.Text.Encoding.UTF8.GetString(bytes); };
+        onSendChannelOpen = () => { Debug.Log("SendChannel Opened"); };
+        onReceiveChannelOpen = () => { Debug.Log("ReceiveChannel Opened"); };
+        onDataChannelClose = () => { Debug.Log("ReceiveChannel Closed"); };
         //localPeerOnNegotiationNeeded = () => { StartCoroutine(PeerOnNegotiationNeeded()); };
         CreateOfferButton.onClick.AddListener(() => { StartCoroutine(CreateOffer()); });
         CreateAnswerButton.onClick.AddListener(() => { StartCoroutine(CreateAnswer()); });
         AddOfferButton.onClick.AddListener(() => { StartCoroutine(AddOffer()); });
         AddAnswerButton.onClick.AddListener(() => { StartCoroutine(AddAnswer()); });
-        AddAnswerButton.onClick.AddListener(() => { StartCoroutine(AddAnswer()); });
+        AddICEButton.onClick.AddListener(() => { AddIceCandidates(); });
         SendButton.onClick.AddListener(() => { SendMessage(); });
     }
 
@@ -112,20 +128,23 @@ public class RTCPeerWithMenu : MonoBehaviour
         localPeer.OnIceConnectionChange = localPeerOnIceConnectionChange;
         localPeer.OnNegotiationNeeded = localPeerOnNegotiationNeeded;
 
-        sendChannel = localPeer.CreateDataChannel("audiostream");
+        //sendChannel = localPeer.CreateDataChannel("audiostream");
+        sendChannel = localPeer.CreateDataChannel("data");
+        sendChannel.OnOpen = onSendChannelOpen;
+        localPeer.OnDataChannel = onDataChannel;
+        //eceiveChannel = localPeer.CreateDataChannel("data");
+
         //audioStream = Audio.CaptureStream();
 
-        receiveChannel = localPeer.CreateDataChannel("data");
-        onDataChannel = channel =>
-        {
-            receiveChannel = channel;
-            receiveChannel.OnMessage = onDataChannelMessage;
-            receiveChannel.OnOpen = onDataChannelOpen;
-            receiveChannel.OnClose = onDataChannelClose;
-        };
-        onDataChannelMessage = bytes => { Debug.Log(System.Text.Encoding.UTF8.GetString(bytes)); };
-        onDataChannelOpen = () => { Debug.Log("ReceiveChannel Opened"); };
-        onDataChannelClose = () => { Debug.Log("ReceiveChannel Closed"); };
+        //receiveChannel = localPeer.CreateDataChannel("data");
+        //onDataChannel = channel =>
+        //{
+        //    receiveChannel = channel;
+        //    receiveChannel.OnMessage = onDataChannelMessage;
+        //    receiveChannel.OnOpen = onDataChannelOpen;
+        //    receiveChannel.OnClose = onDataChannelClose;
+        //};
+
         Debug.Log("pc1 createOffer start");
         var op = localPeer.CreateOffer(ref _offerOptions);
         yield return op;
@@ -165,21 +184,22 @@ public class RTCPeerWithMenu : MonoBehaviour
         localPeer.OnIceConnectionChange = localPeerOnIceConnectionChange;
         localPeer.OnNegotiationNeeded = localPeerOnNegotiationNeeded;
 
-        sendChannel = localPeer.CreateDataChannel("audiostream");
+        //sendChannel = localPeer.CreateDataChannel("audiostream");
+        sendChannel = localPeer.CreateDataChannel("data");
+        sendChannel.OnOpen = onSendChannelOpen;
+        localPeer.OnDataChannel = onDataChannel;
+        //eceiveChannel = localPeer.CreateDataChannel("data");
+
         //audioStream = Audio.CaptureStream();
 
-        receiveChannel = localPeer.CreateDataChannel("data");
-        onDataChannel = channel =>
-        {
-            receiveChannel = channel;
-            receiveChannel.OnMessage = onDataChannelMessage;
-            receiveChannel.OnOpen = onDataChannelOpen;
-            receiveChannel.OnClose = onDataChannelClose;
-        };
-        onDataChannelMessage = bytes => { Debug.Log(System.Text.Encoding.UTF8.GetString(bytes)); };
-        onDataChannelOpen = () => { Debug.Log("ReceiveChannel Opened"); };
-        onDataChannelClose = () => { Debug.Log("ReceiveChannel Closed"); };
-        Debug.Log("Test debug line");
+        //receiveChannel = localPeer.CreateDataChannel("data");
+        //onDataChannel = channel =>
+        //{
+        //    receiveChannel = channel;
+        //    receiveChannel.OnMessage = onDataChannelMessage;
+        //    receiveChannel.OnOpen = onDataChannelOpen;
+        //    receiveChannel.OnClose = onDataChannelClose;
+        //};
 
         RTCSessionDescription desc = new RTCSessionDescription();
         desc.type = RTCSdpType.Offer;
@@ -214,28 +234,56 @@ public class RTCPeerWithMenu : MonoBehaviour
         yield return op2;
         
     }
-    public void AddIceCandidate(string candidate)
+    [Serializable]
+    public class IceCandidate
     {
+        public IceCandidate(string candidate, string sdpMid, int? sdpMLineIndex)
+        {
+            this.candidate = candidate;
+            this.sdpMid = sdpMid;
+            this.sdpMLineIndex = sdpMLineIndex;
+        }
 
-        // TODO: create multiple candidates from string
-        RTCIceCandidateInit candyInit = new RTCIceCandidateInit();
-        candyInit.candidate = candidate;
-        RTCIceCandidate c = new RTCIceCandidate(candyInit);
-        localPeer.AddIceCandidate(c);
+        public string candidate = "unknown";
+        public string sdpMid;
+        public int? sdpMLineIndex;
     }
 
-    public void AddIceCandidate(string candidate, string sdpMid, int sdpMLineIndex)
+    [Serializable]
+    public class IceList
     {
-        RTCIceCandidateInit candyInit = new RTCIceCandidateInit();
-        candyInit.candidate = candidate;
-        candyInit.sdpMid = candidate;
-        candyInit.sdpMLineIndex = sdpMLineIndex;
-        RTCIceCandidate c = new RTCIceCandidate(candyInit);
-        localPeer.AddIceCandidate(c);
+        public List<IceCandidate> iceList;
     }
+
+    public void AddIceCandidates()
+    {
+        IceList recievedIces = JsonUtility.FromJson<IceList>(AddICEInput.text);
+        Debug.Log("added ices:" + recievedIces.iceList.Count);
+        
+        foreach(IceCandidate i in recievedIces.iceList)
+        {
+            RTCIceCandidateInit ic = new RTCIceCandidateInit();
+            ic.candidate = i.candidate;
+            ic.sdpMid = i.sdpMid;
+            ic.sdpMLineIndex = i.sdpMLineIndex;
+            RTCIceCandidate c = new RTCIceCandidate(ic);
+            localPeer.AddIceCandidate(c);
+        }
+    }
+
+    //public void AddIceCandidate(string candidate, string sdpMid, int sdpMLineIndex)
+    //{
+    //    RTCIceCandidateInit candyInit = new RTCIceCandidateInit();
+    //    candyInit.candidate = candidate;
+    //    candyInit.sdpMid = candidate;
+    //    candyInit.sdpMLineIndex = sdpMLineIndex;
+    //    RTCIceCandidate c = new RTCIceCandidate(candyInit);
+    //    localPeer.AddIceCandidate(c);
+    //}
 
     public void SendMessage()
     {
+        Debug.Log("Sending message " + SendInput.text);
         sendChannel.Send(SendInput.text);
     }
 
@@ -257,24 +305,30 @@ public class RTCPeerWithMenu : MonoBehaviour
         {
             case RTCIceConnectionState.New:
                 Debug.Log("IceConnectionState: New");
+                statusText.text = "New";
                 break;
             case RTCIceConnectionState.Checking:
                 Debug.Log("IceConnectionState: Checking");
+                statusText.text = "Checking";
                 break;
             case RTCIceConnectionState.Closed:
                 Debug.Log("IceConnectionState: Closed");
                 break;
             case RTCIceConnectionState.Completed:
                 Debug.Log("IceConnectionState: Completed");
+                statusText.text = "Completed";
                 break;
             case RTCIceConnectionState.Connected:
                 Debug.Log("IceConnectionState: Connected");
+                statusText.text = "Connected";
                 break;
             case RTCIceConnectionState.Disconnected:
                 Debug.Log("IceConnectionState: Disconnected");
+                statusText.text = "Disconnected";
                 break;
             case RTCIceConnectionState.Failed:
                 Debug.Log("IceConnectionState: Failed");
+                statusText.text = "Failed";
                 break;
             case RTCIceConnectionState.Max:
                 Debug.Log("IceConnectionState: Max");
@@ -344,12 +398,14 @@ public class RTCPeerWithMenu : MonoBehaviour
     {
         string allCandidates = "";
         iceCandidates.Add(candidate.Candidate);
+        IceCandidate ic = new IceCandidate(candidate.Candidate, candidate.SdpMid, candidate.SdpMLineIndex);
+        iceList.iceList.Add(ic);
         //CandidatesInput.text = "";
-        foreach (string c in iceCandidates)
-        {
-            allCandidates += "/" + c;
-        }
-        CandidatesInput.text = allCandidates;
+        //foreach (string c in iceCandidates)
+        //{
+        //    allCandidates += "/" + c;
+        //}
+        CandidatesInput.text = JsonUtility.ToJson(iceList);
     }
 
     private void OnIceCandidate(RTCIceCandidate candidate)
