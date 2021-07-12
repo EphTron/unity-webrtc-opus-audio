@@ -70,14 +70,16 @@ class VoiceChannelMenu: MonoBehaviour
         pc2OnIceConnectionChange = state => { OnIceConnectionChange(pc2, state); };
         pc1OnIceCandidate = candidate => { OnIceCandidate(pc1, candidate); };
         pc2OnIceCandidate = candidate => { OnIceCandidate(pc1, candidate); };
+        onDataChannelMessage = bytes => {
+            Decode(bytes);
+        };
         onDataChannel = channel =>
         {
+            Debug.Log("Receive Channel open");
             remoteDataChannel = channel;
             remoteDataChannel.OnMessage = onDataChannelMessage;
         };
-        onDataChannelMessage = bytes => { 
-                Decode(bytes); 
-        };
+        
         onDataChannelOpen = () => { voiceButton.interactable = true; };
         onDataChannelClose = () => { voiceButton.interactable = false; };
     }
@@ -100,10 +102,11 @@ class VoiceChannelMenu: MonoBehaviour
         byte[] encodedLengthBytes = bytes.Take(size).ToArray();
         byte[] encodedAudioBytes = bytes.Skip(sizeof(int)).Take(bytes.Length - sizeof(int)).ToArray();
         int length = DecodeLength(encodedLengthBytes);
-        
+        //Debug.Log("Decoder pcmLen" + length);
+
         decoder.Decode(encodedAudioBytes, length);
     }
-    
+
     int DecodeLength(byte[] bytes)
     {
         int result = BitConverter.ToInt32(bytes, 0);
@@ -130,22 +133,25 @@ class VoiceChannelMenu: MonoBehaviour
     {
         if (isConnected)
         {
+            Debug.Log("Send: " + data.Length + " " + length);
             buffer = EncodeLength(data, length);
             dataChannel.Send(buffer);
+            //dataChannel.Send(data);
+            //dataChannel.Send();
         }
     }
 
     IEnumerator Connect()
     {
         connectButton.interactable = false;
-        Debug.Log("GetSelectedSdpSemantics");
+        //Debug.Log("GetSelectedSdpSemantics");
         var configuration = GetSelectedSdpSemantics();
         pc1 = new RTCPeerConnection(ref configuration);
-        Debug.Log("Created local peer connection object pc1");
+        //Debug.Log("Created local peer connection object pc1");
         pc1.OnIceCandidate = pc1OnIceCandidate;
         pc1.OnIceConnectionChange = pc1OnIceConnectionChange;
         pc2 = new RTCPeerConnection(ref configuration);
-        Debug.Log("Created remote peer connection object pc2");
+        //Debug.Log("Created remote peer connection object pc2");
         pc2.OnIceCandidate = pc2OnIceCandidate;
         pc2.OnIceConnectionChange = pc2OnIceConnectionChange;
         pc2.OnDataChannel = onDataChannel;
@@ -237,14 +243,14 @@ class VoiceChannelMenu: MonoBehaviour
     void OnIceCandidate(RTCPeerConnection pc, RTCIceCandidate candidate)
     {
         GetOtherPc(pc).AddIceCandidate(candidate);
-        Debug.Log($"1{GetName(pc)} ICE candidate:\n {candidate.Candidate}");
-        Debug.Log($"  2{GetName(pc)} ICE RelatedAddress:\n {candidate.RelatedAddress}");
-        Debug.Log($"  3{GetName(pc)} ICE Address:\n {candidate.Address}");
-        Debug.Log($"  4{GetName(pc)} ICE SdpMLineIndex:\n {candidate.SdpMLineIndex}");
-        Debug.Log($"  5{GetName(pc)} ICE SdpMid:\n {candidate.SdpMid}");
-        Debug.Log($"  6{GetName(pc)} ICE UserNameFragment:\n {candidate.UserNameFragment}");
-        Debug.Log($"  7{GetName(pc)} ICE candidate:\n {candidate.Type}");
-        Debug.Log($"  8{GetName(pc)} ICE candidate:\n {candidate.Candidate}");
+            //Debug.Log($"1{GetName(pc)} ICE candidate:\n {candidate.Candidate}");
+            //Debug.Log($"  2{GetName(pc)} ICE RelatedAddress:\n {candidate.RelatedAddress}");
+            //Debug.Log($"  3{GetName(pc)} ICE Address:\n {candidate.Address}");
+            //Debug.Log($"  4{GetName(pc)} ICE SdpMLineIndex:\n {candidate.SdpMLineIndex}");
+            //Debug.Log($"  5{GetName(pc)} ICE SdpMid:\n {candidate.SdpMid}");
+            //Debug.Log($"  6{GetName(pc)} ICE UserNameFragment:\n {candidate.UserNameFragment}");
+            //Debug.Log($"  7{GetName(pc)} ICE candidate:\n {candidate.Type}");
+            //Debug.Log($"  8{GetName(pc)} ICE candidate:\n {candidate.Candidate}");
     }
 
     string GetName(RTCPeerConnection pc)
@@ -259,8 +265,6 @@ class VoiceChannelMenu: MonoBehaviour
 
     IEnumerator OnCreateOfferSuccess(RTCSessionDescription desc)
     {
-        Debug.Log($"Offer from pc1\n{desc.type}");
-        Debug.Log($"Offer from pc1\n{desc.sdp}");
         Debug.Log("pc1 setLocalDescription start");
         var op = pc1.SetLocalDescription(ref desc);
         yield return op;

@@ -6,6 +6,6 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/RTCPeer.unity
-    guid: 04ced89ec8e993740b5ebd01a71f7d10
+    path: Assets/Scenes/RTCOpusVoicePeer.unity
+    guid: 1515e245eacd1a5418f9cfb80c6f88e6
   m_configObjects: {}

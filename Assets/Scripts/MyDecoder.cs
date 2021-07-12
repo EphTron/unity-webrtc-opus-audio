@@ -8,6 +8,7 @@ public class MyDecoder : MonoBehaviour
     public event Action<float[], int> OnDecoded;
 
     const UnityOpus.NumChannels channels = UnityOpus.NumChannels.Mono;
+    //const UnityOpus.NumChannels channels = UnityOpus.NumChannels.Stereo;
 
     UnityOpus.Decoder decoder;
     readonly float[] pcmBuffer = new float[UnityOpus.Decoder.maximumPacketDuration * (int)channels];
@@ -17,6 +18,7 @@ public class MyDecoder : MonoBehaviour
         decoder = new UnityOpus.Decoder(
             UnityOpus.SamplingFrequency.Frequency_48000,
             UnityOpus.NumChannels.Mono);
+            //UnityOpus.NumChannels.Stereo);
     }
 
     void OnDisable()
@@ -29,6 +31,7 @@ public class MyDecoder : MonoBehaviour
     {
         var pcmLength = decoder.Decode(data, length, pcmBuffer);
         OnDecoded?.Invoke(pcmBuffer, pcmLength);
+        //Debug.Log("Decoder pcmLen" + pcmLength);
     }
 }
 

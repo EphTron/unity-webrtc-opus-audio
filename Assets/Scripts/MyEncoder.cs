@@ -9,6 +9,7 @@ public class MyEncoder : MonoBehaviour
 {
     public event Action<byte[], int> OnEncoded;
 
+    //const UnityOpus.NumChannels channels = UnityOpus.NumChannels.Stereo;
     const int bitrate = 96000;
     const int frameSize = 120;
     const int outputBufferSize = frameSize * 4; // at least frameSize * sizeof(float)
@@ -25,13 +26,15 @@ public class MyEncoder : MonoBehaviour
         recorder.OnAudioReady += OnAudioReady;
         encoder = new UnityOpus.Encoder(
             UnityOpus.SamplingFrequency.Frequency_48000,
-            UnityOpus.NumChannels.Stereo,
+            UnityOpus.NumChannels.Mono,
+            //UnityOpus.NumChannels.Stereo,
             UnityOpus.OpusApplication.Audio)
             {
                 Bitrate = bitrate,
                 Complexity = 10,
-                Signal = UnityOpus.OpusSignal.Music
+                Signal = UnityOpus.OpusSignal.Voice
             };
+        Debug.Log("CHANNELS " + (int)encoder.Channels);
     }
 
     void OnDisable()
@@ -55,7 +58,7 @@ public class MyEncoder : MonoBehaviour
                 frameBuffer[i] = pcmQueue.Dequeue();
             }
             var encodedLength = encoder.Encode(frameBuffer, outputBuffer);
-            //Debug.Log("Endocde Len " + encodedLength);
+            //Debug.Log("Encoder pcmLen" + encodedLength);
             OnEncoded?.Invoke(outputBuffer, encodedLength);
         }
     }

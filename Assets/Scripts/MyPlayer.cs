@@ -7,6 +7,7 @@ using System;
 public class MyPlayer : MonoBehaviour
 {
     const UnityOpus.NumChannels channels = UnityOpus.NumChannels.Mono;
+    //const UnityOpus.NumChannels channels = UnityOpus.NumChannels.Stereo;
     const UnityOpus.SamplingFrequency frequency = UnityOpus.SamplingFrequency.Frequency_48000;
     const int audioClipLength = 1024 * 6;
     AudioSource source;
@@ -31,6 +32,7 @@ public class MyPlayer : MonoBehaviour
 
     void OnDecoded(float[] pcm, int pcmLength)
     {
+        //Debug.Log("Player pcmLen" + pcmLength);
         if (audioClipData == null || audioClipData.Length != pcmLength)
         {
             // assume that pcmLength will not change.

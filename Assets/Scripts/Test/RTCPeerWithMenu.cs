@@ -78,6 +78,27 @@ public class RTCPeerWithMenu : MonoBehaviour
         iceRestart = false,
     };
 
+    [Serializable]
+    public class IceCandidate
+    {
+        public IceCandidate(string candidate, string sdpMid, int? sdpMLineIndex)
+        {
+            this.candidate = candidate;
+            this.sdpMid = sdpMid;
+            this.sdpMLineIndex = sdpMLineIndex;
+        }
+
+        public string candidate = "unknown";
+        public string sdpMid;
+        public int? sdpMLineIndex;
+    }
+
+    [Serializable]
+    public class IceList
+    {
+        public List<IceCandidate> iceList;
+    }
+
     private void Awake()
     {
         // Initialize WebRTC
@@ -114,38 +135,23 @@ public class RTCPeerWithMenu : MonoBehaviour
         CreateAnswerButton.onClick.AddListener(() => { StartCoroutine(CreateAnswer()); });
         AddOfferButton.onClick.AddListener(() => { StartCoroutine(AddOffer()); });
         AddAnswerButton.onClick.AddListener(() => { StartCoroutine(AddAnswer()); });
-        AddICEButton.onClick.AddListener(() => { AddIceCandidates(); });
+        AddICEButton.onClick.AddListener(() => { AddIceCandidateList(); });
         SendButton.onClick.AddListener(() => { SendMessage(); });
     }
 
     public IEnumerator CreateOffer()
     {
-        Debug.Log("GetSelectedSdpSemantics");
         var configuration = GetSelectedSdpSemantics();
         localPeer = new RTCPeerConnection(ref configuration);
-        Debug.Log("Created local peer connection object pc1");
+        
         localPeer.OnIceCandidate = localPeerOnIceCandidate;
         localPeer.OnIceConnectionChange = localPeerOnIceConnectionChange;
         localPeer.OnNegotiationNeeded = localPeerOnNegotiationNeeded;
 
-        //sendChannel = localPeer.CreateDataChannel("audiostream");
         sendChannel = localPeer.CreateDataChannel("data");
         sendChannel.OnOpen = onSendChannelOpen;
         localPeer.OnDataChannel = onDataChannel;
-        //eceiveChannel = localPeer.CreateDataChannel("data");
 
-        //audioStream = Audio.CaptureStream();
-
-        //receiveChannel = localPeer.CreateDataChannel("data");
-        //onDataChannel = channel =>
-        //{
-        //    receiveChannel = channel;
-        //    receiveChannel.OnMessage = onDataChannelMessage;
-        //    receiveChannel.OnOpen = onDataChannelOpen;
-        //    receiveChannel.OnClose = onDataChannelClose;
-        //};
-
-        Debug.Log("pc1 createOffer start");
         var op = localPeer.CreateOffer(ref _offerOptions);
         yield return op;
 
@@ -155,7 +161,6 @@ public class RTCPeerWithMenu : MonoBehaviour
         }
         else
         {
-
             Debug.Log("ERROR: Creating offer failed " + op.Error);
         }
     }
@@ -176,45 +181,28 @@ public class RTCPeerWithMenu : MonoBehaviour
 
     public IEnumerator AddOffer()
     {
-        Debug.Log("GetSelectedSdpSemantics");
         var configuration = GetSelectedSdpSemantics();
         localPeer = new RTCPeerConnection(ref configuration);
-        Debug.Log("Created local peer connection object pc1");
+
         localPeer.OnIceCandidate = localPeerOnIceCandidate;
         localPeer.OnIceConnectionChange = localPeerOnIceConnectionChange;
         localPeer.OnNegotiationNeeded = localPeerOnNegotiationNeeded;
 
-        //sendChannel = localPeer.CreateDataChannel("audiostream");
         sendChannel = localPeer.CreateDataChannel("data");
         sendChannel.OnOpen = onSendChannelOpen;
         localPeer.OnDataChannel = onDataChannel;
-        //eceiveChannel = localPeer.CreateDataChannel("data");
 
-        //audioStream = Audio.CaptureStream();
-
-        //receiveChannel = localPeer.CreateDataChannel("data");
-        //onDataChannel = channel =>
-        //{
-        //    receiveChannel = channel;
-        //    receiveChannel.OnMessage = onDataChannelMessage;
-        //    receiveChannel.OnOpen = onDataChannelOpen;
-        //    receiveChannel.OnClose = onDataChannelClose;
-        //};
-
+        // Create offer description from offer text field
         RTCSessionDescription desc = new RTCSessionDescription();
         desc.type = RTCSdpType.Offer;
         desc.sdp = AddOfferInput.text;
-        Debug.Log("pc2 setRemoteDescription start");
+
         var op2 = localPeer.SetRemoteDescription(ref desc);
         yield return op2;
         
-        Debug.Log("pc2 createAnswer start");
-        // Since the 'remote' side has no media stream we need
-        // to pass in the right constraints in order for it to
-        // accept the incoming offer of audio and video.
-
         var op3 = localPeer.CreateAnswer(ref _answerOptions);
         yield return op3;
+
         if (!op3.IsError)
         {
             yield return OnCreateAnswerSuccess(op3.Desc);
@@ -232,30 +220,11 @@ public class RTCPeerWithMenu : MonoBehaviour
         desc.sdp = AddAnswerInput.text;
         var op2 = localPeer.SetRemoteDescription(ref desc);
         yield return op2;
-        
-    }
-    [Serializable]
-    public class IceCandidate
-    {
-        public IceCandidate(string candidate, string sdpMid, int? sdpMLineIndex)
-        {
-            this.candidate = candidate;
-            this.sdpMid = sdpMid;
-            this.sdpMLineIndex = sdpMLineIndex;
-        }
-
-        public string candidate = "unknown";
-        public string sdpMid;
-        public int? sdpMLineIndex;
     }
 
-    [Serializable]
-    public class IceList
-    {
-        public List<IceCandidate> iceList;
-    }
 
-    public void AddIceCandidates()
+
+    public void AddIceCandidateList()
     {
         IceList recievedIces = JsonUtility.FromJson<IceList>(AddICEInput.text);
         Debug.Log("added ices:" + recievedIces.iceList.Count);
@@ -270,16 +239,6 @@ public class RTCPeerWithMenu : MonoBehaviour
             localPeer.AddIceCandidate(c);
         }
     }
-
-    //public void AddIceCandidate(string candidate, string sdpMid, int sdpMLineIndex)
-    //{
-    //    RTCIceCandidateInit candyInit = new RTCIceCandidateInit();
-    //    candyInit.candidate = candidate;
-    //    candyInit.sdpMid = candidate;
-    //    candyInit.sdpMLineIndex = sdpMLineIndex;
-    //    RTCIceCandidate c = new RTCIceCandidate(candyInit);
-    //    localPeer.AddIceCandidate(c);
-    //}
 
     public void SendMessage()
     {
@@ -338,28 +297,11 @@ public class RTCPeerWithMenu : MonoBehaviour
         }
     }
 
-    IEnumerator PeerOnNegotiationNeeded()
-    {
-        Debug.Log("OH OH Negotiate");
-        var op = localPeer.CreateOffer(ref _offerOptions);
-        yield return op;
-
-        if (!op.IsError)
-        {
-            yield return StartCoroutine(OnCreateOfferSuccess(op.Desc));
-        }
-        else
-        {
-            var error = op.Error;
-            Debug.LogError($"Error Detail Type: {error.message}");
-        }
-    }
-
     IEnumerator OnCreateOfferSuccess(RTCSessionDescription desc)
     {
-        Debug.Log($"Offer from local \n{desc.sdp}");
+
         CreateOfferInput.text = desc.sdp;
-        Debug.Log("pc1 setLocalDescription start");
+
         var op = localPeer.SetLocalDescription(ref desc);
         yield return op;
 
@@ -376,9 +318,9 @@ public class RTCPeerWithMenu : MonoBehaviour
 
     IEnumerator OnCreateAnswerSuccess(RTCSessionDescription desc)
     {
-        Debug.Log($"Answer from remote:\n{desc.sdp}");
+
         CreateAnswerInput.text = desc.sdp;
-        Debug.Log("pc2 setLocalDescription start");
+
         var op = localPeer.SetLocalDescription(ref desc);
         yield return op;
 
@@ -406,15 +348,6 @@ public class RTCPeerWithMenu : MonoBehaviour
         //    allCandidates += "/" + c;
         //}
         CandidatesInput.text = JsonUtility.ToJson(iceList);
-    }
-
-    private void OnIceCandidate(RTCIceCandidate candidate)
-    {
-        localPeer.AddIceCandidate(candidate);
-        
-        Debug.Log($"1 ICE candidate:\n {candidate.Candidate}");
-        Debug.Log($"2 ICE sdpMid:\n {candidate.SdpMid}");
-        Debug.Log($"3 ICE SdpMLineIndex:\n {candidate.SdpMLineIndex}");
     }
 
     // Update is called once per frame
